@@ -1,31 +1,66 @@
+// Components/FilmDetail.js
+
 import React from 'react'
-import { StyleSheet, View, Text, ActivityIndicator, ScrollView, Image, Button, TouchableOpacity } from 'react-native'
+import { StyleSheet, View, Text, ActivityIndicator, ScrollView, Image, TouchableOpacity, Share } from 'react-native'
 import { getFilmDetailFromApi, getImageFromApi } from '../API/TMDBapi'
 import moment from 'moment'
 import numeral from 'numeral'
 import { connect } from 'react-redux'
 
 class FilmDetail extends React.Component {
+
+  static navigationOptions = ({ navigation }) => {
+        const { params } = navigation.state
+        // On accède à la fonction shareFilm et au film via les paramètres qu'on a ajouté à la navigation
+        if (params.film != undefined && Platform.OS === 'ios') {
+          return {
+              // On a besoin d'afficher une image, il faut donc passe par une Touchable une fois de plus
+              headerRight: <TouchableOpacity
+                              style={styles.share_touchable_headerrightbutton}
+                              onPress={() => params.shareFilm()}>
+                              <Image
+                                style={styles.share_image}
+                                source={require('../Image/ic_share.png')} />
+                            </TouchableOpacity>
+          }
+        }
+    }
+
+
   constructor(props) {
     super(props)
     this.state = {
       film: undefined,
-      isLoading: true
+      isLoading: false
     }
+    this.shareFilm = this._shareFilm.bind(this)
+  }
+
+  _updateNavigationParams() {
+    this.props.navigation.setParams({
+      shareFilm: this._shareFilm,
+      film:this.state.film
+    })
   }
 
   componentDidMount() {
+    const favoriteFilmIndex = this.props.favoritesFilm.findIndex(item => item.id === this.props.navigation.state.params.idFilm)
+    if (favoriteFilmIndex !== -1) { // Film déjà dans nos favoris, on a déjà son détail
+      // Pas besoin d'appeler l'API ici, on ajoute le détail stocké dans notre state global au state de notre component
+      this.setState({
+        film: this.props.favoritesFilm[favoriteFilmIndex]
+      }, () => { this._updateNavigationParams () })
+      return
+    }
+    // Le film n'est pas dans nos favoris, on n'a pas son détail
+    // On appelle l'API pour récupérer son détail
+    this.setState({ isLoading: true })
     getFilmDetailFromApi(this.props.navigation.state.params.idFilm).then(data => {
       this.setState({
         film: data,
         isLoading: false
-      })
+      }, () => { this._updateNavigationParams() })
     })
-  }
-
-  componentDidUpdate() {
-    console.log("componentDidUpdate : ")
-    console.log(this.props.favoritesFilm)
   }
 
   _displayLoading() {
@@ -46,10 +81,14 @@ class FilmDetail extends React.Component {
   _displayFavoriteImage() {
     var sourceImage = require('../Image/ic_favorite_border.png')
     if (this.props.favoritesFilm.findIndex(item => item.id === this.state.film.id) !== -1) {
+      // Film dans nos favoris
       sourceImage = require('../Image/ic_favorite.png')
     }
-    return(
-      <Image style={styles.favorite_image} source={sourceImage} />
+    return (
+      <Image
+        style={styles.favorite_image}
+        source={sourceImage}
+      />
     )
   }
 
@@ -64,13 +103,16 @@ class FilmDetail extends React.Component {
           />
           <Text style={styles.title_text}>{film.title}</Text>
           <TouchableOpacity
-            style={styles.favorite_container} onPress={() => this._toggleFavorite()}>{this._displayFavoriteImage()}</TouchableOpacity>
+            style={styles.favorite_container}
+            onPress={() => this._toggleFavorite()}>
+            {this._displayFavoriteImage()}
+          </TouchableOpacity>
           <Text style={styles.description_text}>{film.overview}</Text>
           <Text style={styles.default_text}>Sorti le {moment(new Date(film.release_date)).format('DD/MM/YYYY')}</Text>
           <Text style={styles.default_text}>Note : {film.vote_average} / 10</Text>
           <Text style={styles.default_text}>Nombre de votes : {film.vote_count}</Text>
           <Text style={styles.default_text}>Budget : {numeral(film.budget).format('0,0[.]00 $')}</Text>
-          <Text style={styles.default_text}>Recette : {numeral(film.revenue).format('0,0[.]00 $')}</Text>
+          <Text style={styles.default_text}>Budget : {numeral(film.revenue).format('0,0[.]00 $')}</Text>
           <Text style={styles.default_text}>Genre(s) : {film.genres.map(function(genre){
               return genre.name;
             }).join(" / ")}
@@ -83,6 +125,10 @@ class FilmDetail extends React.Component {
       )
     }
   }
+_shareFilm() {
+  const{ film } = this.state
+  Share.share({title: film.title, message: film.overview })
+}
 
   render() {
     return (
@@ -126,6 +172,9 @@ const styles = StyleSheet.create({
     color: '#000000',
     textAlign: 'center'
   },
+  favorite_container: {
+    alignItems: 'center',
+  },
   description_text: {
     fontStyle: 'italic',
     color: '#666666',
@@ -137,12 +186,12 @@ const styles = StyleSheet.create({
     marginRight: 5,
     marginTop: 5,
   },
-  favorite_container: {
-    alignItems: 'center',
-  },
   favorite_image: {
     width: 40,
     height: 40
+  },
+  share_touchable_headerrightbutton: {
+    marginRight: 8
   }
 })
 

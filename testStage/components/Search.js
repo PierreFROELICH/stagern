@@ -1,5 +1,7 @@
+// Components/Search.js
+
 import React from 'react'
-import { StyleSheet, View, TextInput, Button, Text, FlatList, ActivityIndicator } from 'react-native'
+import { StyleSheet, View, TextInput, Button, Text, FlatList, ActivityIndicator, SafeAreaView } from 'react-native'
 import FilmItem from './FilmItem'
 import FilmList from './FilmList'
 import { getFilmsFromApiWithSearchedText } from '../API/TMDBapi'
@@ -19,7 +21,6 @@ class Search extends React.Component {
   }
 
   _loadFilms() {
-    console.log("Contenu de test : " + this.test)
     if (this.searchedText.length > 0) {
       this.setState({ isLoading: true })
       getFilmsFromApiWithSearchedText(this.searchedText, this.page+1).then(data => {
@@ -47,6 +48,11 @@ class Search extends React.Component {
     })
   }
 
+  _displayDetailForFilm = (idFilm) => {
+    console.log("Display film with id " + idFilm)
+    this.props.navigation.navigate("FilmDetail", { idFilm: idFilm })
+  }
+
   _displayLoading() {
     if (this.state.isLoading) {
       return (
@@ -59,6 +65,7 @@ class Search extends React.Component {
 
   render() {
     return (
+      <SafeAreaView style={styles.main_container}>
       <View style={styles.main_container}>
         <TextInput
           style={styles.textinput}
@@ -68,15 +75,16 @@ class Search extends React.Component {
         />
         <Button title='Rechercher' onPress={() => this._searchFilms()}/>
         <FilmList
-          films={this.state.films} // C'est bien le component Search qui récupère les films depuis l'API et on les transmet ici pour que le component FilmList les affiche
-          navigation={this.props.navigation} // Ici on transmet les informations de navigation pour permettre au component FilmList de naviguer vers le détail d'un film
-          page={this.page}
-          totalPages={this.totalPages} // les infos page et totalPages vont être utile, côté component FilmList, pour ne pas déclencher l'évènement pour charger plus de film si on a atteint la dernière page
+          films={this.state.films}
+          navigation={this.props.navigation}
           loadFilms={this._loadFilms}
-          test={"props du component FilmList"}
+          page={this.page}
+          totalPages={this.totalPages}
+          favoriteList={false} // Ici j'ai simplement ajouté un booléen à false pour indiquer qu'on n'est pas dans le cas de l'affichage de la liste des films favoris. Et ainsi pouvoir déclencher le chargement de plus de films lorsque l'utilisateur scrolle.
         />
         {this._displayLoading()}
       </View>
+    </SafeAreaView>
     )
   }
 }
