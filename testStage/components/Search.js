@@ -1,5 +1,3 @@
-// Components/Search.js
-
 import React from 'react'
 import { StyleSheet, View, TextInput, Button, Text, FlatList, ActivityIndicator, SafeAreaView } from 'react-native'
 import FilmItem from './FilmItem'
@@ -13,14 +11,12 @@ class Search extends React.Component {
     this.searchedText = ""
     this.page = 0
     this.totalPages = 0
-    this.state = {
-      films: [],
-      isLoading: false
-    }
+    this.state = { films: [], isLoading: false }
     this._loadFilms = this._loadFilms.bind(this)
   }
 
   _loadFilms() {
+    console.log("Contenu de test : " + this.test)
     if (this.searchedText.length > 0) {
       this.setState({ isLoading: true })
       getFilmsFromApiWithSearchedText(this.searchedText, this.page+1).then(data => {
@@ -65,7 +61,7 @@ class Search extends React.Component {
 
   render() {
     return (
-      <SafeAreaView style={styles.main_container}>
+    <SafeAreaView style={styles.main_container} >
       <View style={styles.main_container}>
         <TextInput
           style={styles.textinput}

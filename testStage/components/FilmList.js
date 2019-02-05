@@ -12,6 +12,7 @@ class FilmList extends React.Component {
     this.state = {
       films: []
     }
+    this._displayDetailForFilm = this._displayDetailForFilm.bind(this)
   }
 
   _displayDetailForFilm = (idFilm) => {
@@ -35,7 +36,7 @@ class FilmList extends React.Component {
           )}
           onEndReachedThreshold={0.5}
           onEndReached={() => {
-            if (!this.props.favoriteList && this.props.page < this.props.totalPages) {
+            if (this.props.page < this.props.totalPages) {
               this.props.loadFilms()
             }
           }}
